@@ -1,5 +1,4 @@
-# ar-750-use-lan-port-as-2nd-wan.md
-OpenWrt - GL.iNet AR-750 Use LAN port as 2nd WAN
+# OpenWrt - GL.iNet AR-750 Use LAN port as 2nd WAN
 
 ## Introduction
 
@@ -89,6 +88,8 @@ config interface 'wan2'
 
 - Here is how the file should look after the changes (if you started from the original file)
 
+You can download it [here](network.txt)
+
 ```bash
 config interface 'loopback'
 	option ifname 'lo'
@@ -154,6 +155,8 @@ config interface 'guest'
 
 <details>
 <summary>Original network file</summary>
+
+You can download it [here](network.bak)
 
 ```bash
 config interface 'loopback'
