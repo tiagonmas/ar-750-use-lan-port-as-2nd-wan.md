@@ -1,4 +1,4 @@
-# OpenWrt - GL.iNet AR-750 Use LAN port as 2nd WAN
+# OpenWrt - GL.iNet AR-750 Use LAN port as 2nd WAN in order to use Mwan3
 
 ## Introduction
 
@@ -13,7 +13,7 @@ How to configure the network of a [GL-AR750](https://openwrt.org/toh/gl.inet/gl-
 - [Firewall configurations](#Firewall-configurations)
 - [Testing](#Testing)
 - [How things will show up in the web interface](#How-things-will-show-up-in-the-web-interface)
-- [Next Steps](#Next-steps)
+- [Configure Mwan3](#Configure-Mwan3)
 - [Troubleshooting](#Troubleshooting)
 
 <!-- tocstop -->
@@ -277,9 +277,99 @@ root@GL-AR750:~#
 Here are both WAN connections on the device  
 ![Ar750Ports](img/openwrt.ar750.ports.png "Ports")
 
-## Next steps
+## Configure Mwan3
 
 Now that I have 2 WAN ports in my router (that initially only had one), I can now use [Mwan3](https://openwrt.org/docs/guide-user/network/wan/multiwan/mwan3) to load balance both of my internet connections.
+
+I followed the well [detailed guide](https://openwrt.org/docs/guide-user/network/wan/multiwan/mwan3) to configure Mwan3.
+
+Here is my mwan3 config file (# /etc/config/mwan3)
+
+You can download it [here](mwan3.txt)
+```bash
+
+config globals 'globals'
+	option enabled '1'
+	option mmx_mask '0x3F00'
+
+config interface 'wan'
+	option enabled '1'
+	list track_ip '8.8.4.4'
+	list track_ip '8.8.8.8'
+	list track_ip '208.67.222.222'
+	list track_ip '208.67.220.220'
+	option reliability '2'
+	option count '1'
+	option timeout '2'
+	option interval '5'
+	option down '3'
+	option up '8'
+ 
+config interface 'wan2'
+	option enabled '1'
+	list track_ip '8.8.8.8'
+	list track_ip '208.67.220.220'
+	option reliability '1'
+	option count '1'
+	option timeout '2'
+	option interval '5'
+	option down '3'
+	option up '8'
+ 
+config member 'wan_m1_w3'
+	option interface 'wan'
+	option metric '1'
+	option weight '3'
+ 
+config member 'wan_m2_w3'
+	option interface 'wan'
+	option metric '2'
+	option weight '3'
+ 
+config member 'wan2_m1_w2'
+	option interface 'wan2'
+	option metric '1'
+	option weight '2'
+ 
+config member 'wan2_m2_w2'
+	option interface 'wan2'
+	option metric '2'
+	option weight '2'
+ 
+config policy 'wan_only'
+	list use_member 'wan_m1_w3'
+ 
+config policy 'wan2_only'
+	list use_member 'wan2_m1_w2'
+ 
+config policy 'balanced'
+	list use_member 'wan_m1_w3'
+	list use_member 'wan2_m1_w2'
+ 
+config policy 'wan_wan2'
+	list use_member 'wan_m1_w3'
+	list use_member 'wan2_m2_w2'
+ 
+config policy 'wan2_wan'
+	list use_member 'wan_m2_w3'
+	list use_member 'wan2_m1_w2'
+ 
+config rule 'sticky_even'
+	option src_ip '0.0.0.0/0.0.0.1'
+	option dest_port '443'
+	option proto 'tcp'
+	option use_policy 'wan_wan2'
+ 
+config rule 'sticky_odd'
+	option src_ip '0.0.0.1/0.0.0.1'
+	option dest_port '443'
+	option proto 'tcp'
+	option use_policy 'wan2_wan'
+ 
+config rule 'default_rule'
+	option dest_ip '0.0.0.0/0'
+	option use_policy 'balanced'
+```
 
 ## Troubleshooting
 
